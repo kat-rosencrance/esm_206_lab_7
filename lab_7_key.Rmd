@@ -1,0 +1,124 @@
+---
+title: "Lab 7 Multiple Linear Regression intro"
+author: "Katherine Rosencrance"
+date: "11/9/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(palmerpenguins)
+library(GGally)
+library(broom)
+library(kableExtra)
+library(modelsummary)
+library(stargazer)
+```
+
+
+## Explore penguins
+
+Use `GGally::ggpairs()` to create a pairs plot
+
+```{r}
+ggpairs(penguins)
+```
+
+Thats overkill. Lets simplify the variables we include in our ggpairs plot
+
+-species
+-bill_length_mm through body_mass_g
+
+```{r}
+penguins %>%
+  select(species, bill_length_mm:body_mass_g) %>% 
+  ggpairs(aes(color = species))
+```
+
+## Multiple linear regression
+
+We are going to understand better the realtionships between multiple predictor variables and an outcome which is penguin body mass
+
+the different predictor variables are
+
+-species
+-flipper length
+-sex
+-bill depth
+
+### Model 1
+
+Model body mass based on only fliper l and bill d (bad idea)
+```{r}
+model_1 <- lm(body_mass_g ~ flipper_length_mm + bill_depth_mm, data = penguins)
+
+model_1
+
+# More info on coefficients and model
+summary(model_1)
+```
+If everything else is held constant, we expect that for each 1mm increase in flipper length, penguin body mass increases by 51.54 g on average.
+
+R squared number means 76% of variance in body mass is explained by this model (penguin flipper length and bill depth)
+
+Actually we think that a model for penguin body mass should contain variables species, flipper length, and penguin sex
+
+```{r}
+model_2 <- lm(body_mass_g ~ flipper_length_mm + species+sex, data = penguins)
+
+model_2
+
+# Try interpreting coefficients for flipper length, gentoo, and male
+
+# Flipper length- if everythig else constant, on average youd expect a male to be 530 g larger than females
+
+# Gentoo - if everything else constant, youd expect a gentoo penguin to be 836 g larger in body mass than adelie on avergae
+
+
+```
+reference level = if not shown!
+
+
+### Visualize this model
+
+```{r}
+ggplot(data = penguins, aes(x = flipper_length_mm, y = body_mass_g))+
+  geom_point(aes(color = species))+ 
+  facet_wrap (~ sex)
+```
+
+## A couple ways to get and report MLR model outcomes
+
+use broom::tidy to get coefficient data
+
+```{r}
+penguin_model2<- tidy(model_2)
+```
+
+in line code that spits out coefficient for gentoo `r penguin_model2$estimate[4]`
+
+## look a mdel diagnostics
+
+use plot() function
+
+```{r}
+plot(model_2)
+```
+
+## Report model outputs in a summary table
+
+use model summary
+
+```{r}
+modelsummary(model_2)
+```
+use stargazer
+
+```{r, results = "asis"}
+stargazer(model_2, type = "html")
+```
+
+
+
